@@ -36,10 +36,10 @@ help: ## Display this help.
 build-all: build-cpu build-memory build-sriov ## build all the binaries
 
 build-cpu: ## build the dracpu driver
-	go build -v -o "$(OUT_DIR)/dracpu" ./cmd/cpu
+	go build -v -o "$(OUT_DIR)/dracpu" ./driver/cpu
 
 build-memory: ## build the dramemory driver
-	go build -v -o "$(OUT_DIR)/dramemory" ./cmd/memory
+	go build -v -o "$(OUT_DIR)/dramemory" ./driver/memory
 
 build-sriov: ## build the sriov driver
-	go build -v -o "$(OUT_DIR)/drasriov" ./cmd/sriov
+	go build -v -o "$(OUT_DIR)/drasriov" ./driver/sriov
