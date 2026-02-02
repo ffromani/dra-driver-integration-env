@@ -33,13 +33,20 @@ default: build-all ## Default builds
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-27s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-build-all: build-cpu build-memory build-sriov ## build all the binaries
+build-all: build-driver-all build-setup-all ## build all the binaries
 
-build-cpu: ## build the dracpu driver
+build-driver-all: build-driver-cpu build-driver-memory build-driver-sriov ## build all the drivers
+
+build-driver-cpu: ## build the dracpu driver
 	go build -v -o "$(OUT_DIR)/dracpu" ./driver/cpu
 
-build-memory: ## build the dramemory driver
+build-driver-memory: ## build the dramemory driver
 	go build -v -o "$(OUT_DIR)/dramemory" ./driver/memory
 
-build-sriov: ## build the sriov driver
+build-driver-sriov: ## build the sriov driver
 	go build -v -o "$(OUT_DIR)/drasriov" ./driver/sriov
+
+build-setup-all: build-setup-containerd ## build all the setup helpers
+
+build-setup-containerd: ## build the containerd setup helper
+	go build -v -o "$(OUT_DIR)/setup-containerd" ./setup/containerd

@@ -3,7 +3,7 @@ module github.com/ffromani/dra-driver-integration-env
 go 1.25.6
 
 require (
-	github.com/ffromani/dra-driver-memory v0.1.4
+	github.com/ffromani/dra-driver-memory v0.1.5
 	github.com/go-logr/stdr v1.2.2
 	github.com/k8snetworkplumbingwg/dra-driver-sriov v0.0.0-20260121133427-87c9c34d0b57
 	github.com/kubernetes-sigs/dra-driver-cpu v0.0.0-20260202071427-b0c9921e1374
@@ -67,6 +67,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/opencontainers/runtime-spec v1.3.0 // indirect
 	github.com/opencontainers/runtime-tools v0.9.1-0.20251114084447-edf4cb3d2116 // indirect
+	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
