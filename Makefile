@@ -33,10 +33,13 @@ default: build-all ## Default builds
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-27s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-build-all: build-cpu build-memory ## build all the binaries
+build-all: build-cpu build-memory build-sriov ## build all the binaries
 
 build-cpu: ## build the dracpu driver
 	go build -v -o "$(OUT_DIR)/dracpu" ./cmd/cpu
 
 build-memory: ## build the dramemory driver
 	go build -v -o "$(OUT_DIR)/dramemory" ./cmd/memory
+
+build-sriov: ## build the sriov driver
+	go build -v -o "$(OUT_DIR)/drasriov" ./cmd/sriov
