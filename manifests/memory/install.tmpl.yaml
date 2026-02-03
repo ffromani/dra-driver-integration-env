@@ -1,0 +1,195 @@
+# Copyright 2025 The Kubernetes Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dramemory
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+  - apiGroups:
+      - "resource.k8s.io"
+    resources:
+      - resourceslices
+    verbs:
+      - list
+      - watch
+      - create
+      - update
+      - delete
+  - apiGroups:
+      - "resource.k8s.io"
+    resources:
+      - resourceclaims
+      - deviceclasses
+    verbs:
+      - get
+  - apiGroups:
+      - "resource.k8s.io"
+    resources:
+      - resourceclaims/status
+    verbs:
+      - patch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dramemory
+  namespace: kube-system
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dramemory
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dramemory
+subjects:
+  - kind: ServiceAccount
+    name: dramemory
+    namespace: kube-system
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: dramemory
+  namespace: kube-system
+  labels:
+    tier: node
+    app: dramemory
+    k8s-app: dramemory
+spec:
+  selector:
+    matchLabels:
+      app: dramemory
+  template:
+    metadata:
+      labels:
+        tier: node
+        app: dramemory
+        k8s-app: dramemory
+        build: devel
+    spec:
+      nodeSelector:
+        kubernetes.io/os: linux
+      priorityClassName: system-node-critical
+      hostNetwork: true
+      tolerations:
+        - operator: Exists
+          effect: NoSchedule
+      serviceAccountName: dramemory
+      hostPID: true
+      initContainers:
+        - name: setup-runtime
+          image: quay.io/ffromani/dramem:latest
+          volumeMounts:
+            - mountPath: /etc
+              name: etc
+          securityContext:
+            privileged: true
+          command:
+            - /bin/setup-runtime
+      containers:
+        - name: dramemory
+          command:
+            - /bin/dramemory
+          args:
+            - -v=6
+            - --cgroup-mount=/sys/fs/cgroup
+          image: quay.io/ffromani/dramem:latest
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "200Mi"
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          volumeMounts:
+            - name: device-plugin
+              mountPath: /var/lib/kubelet/plugins
+            - name: plugin-registry
+              mountPath: /var/lib/kubelet/plugins_registry
+            - name: nri-plugin
+              mountPath: /var/run/nri
+            - name: cdi-dir
+              mountPath: /var/run/cdi
+            - name: cgroupfs
+              mountPath: /sys/fs/cgroup
+              mountPropagation: HostToContainer
+      volumes:
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/plugins
+        - name: plugin-registry
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry
+        - name: nri-plugin
+          hostPath:
+            path: /var/run/nri
+        - name: cdi-dir
+          hostPath:
+            path: /var/run/cdi
+            type: DirectoryOrCreate
+        - name: cgroupfs
+          hostPath:
+            path: /sys/fs/cgroup
+        - name: etc
+          hostPath:
+            path: /etc
+---
+apiVersion: resource.k8s.io/v1
+kind: DeviceClass
+metadata:
+  name: dra.memory
+spec:
+  selectors:
+  - cel:
+      expression: device.driver == "dra.memory" && device.attributes["resource.kubernetes.io"].pageSize
+        == "4Ki" && device.attributes["resource.kubernetes.io"].hugeTLB == false
+---
+apiVersion: resource.k8s.io/v1
+kind: DeviceClass
+metadata:
+  name: dra.hugepages-2m
+spec:
+  selectors:
+  - cel:
+      expression: device.driver == "dra.memory" && device.attributes["resource.kubernetes.io"].pageSize
+        == "2Mi" && device.attributes["resource.kubernetes.io"].hugeTLB == true
+---
+apiVersion: resource.k8s.io/v1
+kind: DeviceClass
+metadata:
+  name: dra.hugepages-1g
+spec:
+  selectors:
+  - cel:
+      expression: device.driver == "dra.memory" && device.attributes["resource.kubernetes.io"].pageSize
+        == "1Gi" && device.attributes["resource.kubernetes.io"].hugeTLB == true
