@@ -93,7 +93,29 @@ build-image: ## build image
 
 # manifests
 
-manifest-all: manifest-memory
+manifest-all: manifest-cpu manifest-memory
+
+RESERVED_CPUS ?= 0
+manifest-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq ## create the CPU driver install manifests
+	@cd manifests/cpu && $(YQ) e -s '(.kind | downcase) + "-" + .metadata.name + ".part.yaml"' ../../manifests/cpu/install.tmpl.yaml
+	@# need to make kind load docker-image working as expected: see https://kind.sigs.k8s.io/docs/user/quick-start/#loading-an-image-into-your-cluster
+	@$(YQ) -i '.spec.template.spec.initContainers[0].name = "setup-runtime"' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.initContainers[0].imagePullPolicy = "IfNotPresent"' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.initContainers[0].image = "${IMAGE}"' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.initContainers[0].command = "/bin/setup-runtime"' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].image = "${IMAGE}"' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].command = "/bin/dracpu"' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].args = ["-v=6", "--cpu-device-mode=grouped", "--reserved-cpus=${RESERVED_CPUS}"]' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.metadata.labels["build"] = "${GIT_VERSION}"' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) '.' \
+		manifests/cpu/clusterrole-dracpu.part.yaml \
+		manifests/cpu/serviceaccount-dracpu.part.yaml \
+		manifests/cpu/clusterrolebinding-dracpu.part.yaml \
+		manifests/cpu/daemonset-dracpu.part.yaml \
+		manifests/cpu/deviceclass-dra.cpu.part.yaml \
+		> $(YAML_DIR)/install.cpu.yaml
+	@rm manifests/cpu/*.part.yaml
 
 manifest-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-install-yq ## create the memory driver install manifests
 	@cd manifests/memory && $(YQ) e -s '(.kind | downcase) + "-" + .metadata.name + ".part.yaml"' ../../manifests/memory/install.tmpl.yaml
