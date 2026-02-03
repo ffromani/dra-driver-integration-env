@@ -59,7 +59,7 @@ YQ = $(DEPS_DIR)/yq
 default: build-all ## Default builds
 
 help: ## Display this help.
-	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-27s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-32s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 # binaries
 
@@ -86,14 +86,19 @@ build-setup-runtime-containerd: ## build the containerd setup helper
 
 # container images
 
-build-image: ## build image
+image-all: build-image ## build all the container images
+
+build-image: ## build the all-in-one container image
 	${CONTAINER_ENGINE} build . \
 		--platform="${PLATFORMS}" \
 		--tag="${IMAGE}"
 
 # manifests
 
-manifest-all: manifest-cpu manifest-memory
+manifest-all: manifest-cluster manifest-cpu manifest-memory
+
+manifest-cluster: $(YAML_DIR) ## create the cluster setup manifests
+	@cp manifest/cluster/kind.yaml $(YAML_DIR)/cluster.yaml
 
 RESERVED_CPUS ?= 0
 manifest-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq ## create the CPU driver install manifests
@@ -138,15 +143,21 @@ manifest-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-install-yq #
 
 # kind management
 
-kind-setup: manifest-all image-all ## setup a CI cluster from scratch
-	kind create cluster --name ${CLUSTER_NAME} --config hack/ci/kind-ci.yaml
+kind-setup: kind-create kind-install
+
+kind-create: image-all ## create and preload a kind cluster from scratch
+	kind create cluster --name ${CLUSTER_NAME} --config build/yaml/cluster.yaml
 	kubectl label node ${CLUSTER_NAME}-worker node-role.kubernetes.io/worker=''
 	kind load docker-image --name ${CLUSTER_NAME} ${IMAGE}
-	hack/ci/wait-worker-nodes.sh
-	kubectl create -f hack/ci/install-ci.yaml
-	hack/ci/wait-resourcelices.sh
+	scripts/wait-worker-nodes.sh
 
-kind-teardown:  ## teardown a CI cluster
+kind-install: manifest-all ## install the DRA drivers on the default cluster
+	kubectl create -f build/yaml/install.cpu.yaml
+	kubectl create -f build/yaml/install.memory.yaml
+	# TODO: sriov
+	scripts/wait-resourcelices.sh
+
+kind-teardown: ## teardown a CI cluster
 	kind delete cluster --name ${CLUSTER_NAME}
 
 # dependencies
