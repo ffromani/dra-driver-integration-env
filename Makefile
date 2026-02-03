@@ -56,12 +56,14 @@ YQ_VERSION ?= 4.47.1
 # paths
 YQ = $(DEPS_DIR)/yq
 
+##@ general
+
 default: build-all ## Default builds
 
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-32s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-# binaries
+##@ binaries
 
 build-all: build-driver-all build-setup-all ## build all the binaries
 
@@ -84,7 +86,7 @@ build-setup-runtime: build-setup-runtime-containerd ## build the runtime setup e
 build-setup-runtime-containerd: ## build the containerd setup helper
 	go build -v -o "$(BIN_DIR)/setup-runtime-containerd" ./setup/containerd
 
-# container images
+##@ container images
 
 image-all: build-image ## build all the container images
 
@@ -93,7 +95,7 @@ build-image: ## build the all-in-one container image
 		--platform="${PLATFORMS}" \
 		--tag="${IMAGE}"
 
-# manifests
+##@ manifests
 
 manifest-all: manifest-cluster manifest-cpu manifest-memory
 
@@ -141,7 +143,7 @@ manifest-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-install-yq #
 		> $(YAML_DIR)/install.memory.yaml
 	@rm manifests/memory/*.part.yaml
 
-# kind management
+##@ kind management
 
 kind-setup: kind-create kind-install
 
@@ -160,7 +162,7 @@ kind-install: manifest-all ## install the DRA drivers on the default cluster
 kind-teardown: ## teardown a CI cluster
 	kind delete cluster --name ${CLUSTER_NAME}
 
-# dependencies
+##@ dependencies
 
 .PHONY:
 dep-install-yq: $(DEPS_DIR) ## make sure the yq tool is available locally
@@ -170,7 +172,7 @@ dep-install-yq: $(DEPS_DIR) ## make sure the yq tool is available locally
                chmod 0755 $(YQ);\
 	fi
 
-# utilities
+# utilities (intentionally plain comments)
 
 $(YAML_DIR): $(OUT_DIR) ## creates the yaml output directory (used internally)
 	@mkdir -p $(YAML_DIR)
