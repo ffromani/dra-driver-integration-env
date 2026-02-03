@@ -27,6 +27,9 @@ RUN make build-all
 
 # copy binary onto base image
 FROM busybox:1.36.1-glibc
-COPY --from=builder --chown=root:root /go/src/drv/bin/dracpu /bin/dracpu
-COPY --from=builder --chown=root:root /go/src/drv/bin/dramemory /bin/dramemory
-COPY --from=builder --chown=root:root /go/src/drv/bin/drasriov /bin/drasriov
+COPY --from=builder --chown=root:root /go/src/drv/build/bin/dramemory /bin/dramemory
+COPY --from=builder --chown=root:root /go/src/drv/build/bin/dracpu /bin/dracpu
+COPY --from=builder --chown=root:root /go/src/drv/build/bin/drasriov /bin/drasriov
+COPY --from=builder --chown=root:root /go/src/drv/build/bin/setup-runtime-containerd /bin/setup-runtime-containerd
+COPY --from=builder --chown=root:root /go/src/drv/build/bin/setup-runtime /bin/setup-runtime
+CMD ["/bin/sleep", "inf"]
