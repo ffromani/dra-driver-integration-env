@@ -152,7 +152,7 @@ manifest-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-install-yq #
 
 kind-setup: kind-create kind-install ## setup the test cluster from scratch
 
-kind-create: image-all ## create and preload a kind cluster from scratch
+kind-create: manifest-cluster image-all ## create and preload a kind cluster from scratch
 	kind create cluster --name ${CLUSTER_NAME} --config build/yaml/cluster.yaml
 	kubectl label node ${CLUSTER_NAME}-worker node-role.kubernetes.io/worker=''
 	kind load docker-image --name ${CLUSTER_NAME} ${IMAGE}
