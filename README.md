@@ -117,6 +117,20 @@ To remove the kind cluster:
 make kind-teardown
 ```
 
+# Implementation design and notes
+
+## why import `main.go` of the drivers?
+
+To efficiently preload driver images in the local kind cluster minimizing the network traffic.
+
+Pulling the driver's `main.go`, alongside their install manifests (copy/paste them), enables us to easily
+build a combined image and to load into the kind cluster.
+The main upside of this approach is this don't require the drivers to provide pre-built up-to-date container images.
+The main downside of this approach is we have to import (copy/paste) more from upstream drivers.
+Rebuilding drivers locally in a combined image is a mean to an end, so in the future we will consider just pulling
+pre-built images as main install vehicle or as alternative install vehicle.
+
+
 # License
 
 Apache v2
