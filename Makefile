@@ -88,7 +88,7 @@ build-setup-runtime-containerd: ## build the containerd setup helper
 
 ##@ container images
 
-image-all: build-image ## build all the container images
+image-all: image-drivers ## build all the container images
 
 image-drivers: ## build the all-in-one container image with all the DRA drivers
 	${CONTAINER_ENGINE} build . \
