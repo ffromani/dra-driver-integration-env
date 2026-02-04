@@ -7,9 +7,9 @@ which exercise DRA-backed CPU, Memory and SRIOV network device allocation.
 
 # Requirements
 
-golang >= 1.25
-kubectl (or equivalent) to interact with the kubernetes cluster
-[kind](https://kind.sigs.k8s.io/) >= 0.31
+* golang >= 1.25
+* kubectl (or equivalent) to interact with the kubernetes cluster
+* [kind](https://kind.sigs.k8s.io/) >= 0.31
 
 # Quickstart
 
