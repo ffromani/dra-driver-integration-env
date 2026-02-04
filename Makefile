@@ -97,7 +97,7 @@ image-drivers: ## build the all-in-one container image with all the DRA drivers
 
 ##@ manifests
 
-manifest-all: manifest-cluster manifest-cpu manifest-memory
+manifest-all: manifest-cluster manifest-cpu manifest-memory ## build all the manifests
 
 manifest-cluster: $(YAML_DIR) ## create the cluster setup manifests
 	@cp manifest/cluster/kind.yaml $(YAML_DIR)/cluster.yaml
