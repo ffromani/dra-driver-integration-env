@@ -109,10 +109,10 @@ manifest-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq ## crea
 	@$(YQ) -i '.spec.template.spec.initContainers[0].name = "setup-runtime"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.initContainers[0].imagePullPolicy = "IfNotPresent"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.initContainers[0].image = "${IMAGE}"' manifests/cpu/daemonset-dracpu.part.yaml
-	@$(YQ) -i '.spec.template.spec.initContainers[0].command = "/bin/setup-runtime"' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.initContainers[0].command = ["/bin/setup-runtime"]' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].image = "${IMAGE}"' manifests/cpu/daemonset-dracpu.part.yaml
-	@$(YQ) -i '.spec.template.spec.containers[0].command = "/bin/dracpu"' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].command = ["/bin/dracpu"]' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].args = ["-v=6", "--cpu-device-mode=grouped", "--reserved-cpus=${RESERVED_CPUS}"]' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.metadata.labels["build"] = "${GIT_VERSION}"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) '.' \
