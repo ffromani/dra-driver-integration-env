@@ -68,14 +68,14 @@ func main() {
 
 	pod, err := kubeCli.CoreV1().Pods(podNamespace).Get(ctx, podName, metav1.GetOptions{})
 	if err != nil {
-		lh.Error(err, "getting the pod %s/%s", podNamespace, podName)
+		lh.Error(err, "getting the pod", "namespace", podNamespace, "name", podName)
 		os.Exit(1)
 	}
 
 	// Kind names the container exactly as the K8s node name
 	nodeContainer, err := mobyCli.ContainerInspect(ctx, pod.Spec.NodeName, client.ContainerInspectOptions{})
 	if err != nil {
-		lh.Error(err, "inspecting Kind node container %q", pod.Spec.NodeName)
+		lh.Error(err, "inspecting Kind node container", "name", pod.Spec.NodeName)
 		os.Exit(1)
 	}
 	kindNodeID := nodeContainer.Container.ID
