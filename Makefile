@@ -65,7 +65,7 @@ help: ## Display this help.
 
 ##@ binaries
 
-build-all: build-driver-all build-setup-all ## build all the binaries
+build-all: build-driver-all build-setup-all build-validate-all ## build all the binaries
 
 build-driver-all: build-driver-cpu build-driver-memory build-driver-sriov ## build all the drivers
 
@@ -85,6 +85,11 @@ build-setup-runtime: build-setup-runtime-containerd ## build the runtime setup e
 
 build-setup-runtime-containerd: ## build the containerd setup helper
 	go build -v -o "$(BIN_DIR)/setup-runtime-containerd" ./setup/containerd
+
+build-validate-all: build-validate-alignment ## build all the validation tools
+
+build-validate-alignment: ## build alignment validation tool
+	go build -v -o "$(BIN_DIR)/validate-alignment" ./validation/alignment
 
 ##@ container images
 
