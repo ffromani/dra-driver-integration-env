@@ -173,8 +173,7 @@ kind-teardown: ## teardown the purpose-built test cluster
 dep-install-yq: $(DEPS_DIR) ## make sure the yq tool is available locally
 	@# TODO: generalize platform/os?
 	@if [ ! -f $(YQ) ]; then\
-	       curl -L https://github.com/mikefarah/yq/releases/download/v$(YQ_VERSION)/yq_$(OS)_$(ARCH) -o $(YQ);\
-               chmod 0755 $(YQ);\
+	       curl -L https://github.com/mikefarah/yq/releases/download/v$(YQ_VERSION)/yq_$(OS)_$(ARCH) -o $(YQ) && chmod 0755 $(YQ);\
 	fi
 
 # utilities (intentionally plain comments)
