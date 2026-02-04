@@ -145,7 +145,7 @@ manifest-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-install-yq #
 
 ##@ kind management
 
-kind-setup: kind-create kind-install
+kind-setup: kind-create kind-install ## setup the test cluster from scratch
 
 kind-create: image-all ## create and preload a kind cluster from scratch
 	kind create cluster --name ${CLUSTER_NAME} --config build/yaml/cluster.yaml
@@ -159,7 +159,7 @@ kind-install: manifest-all ## install the DRA drivers on the default cluster
 	# TODO: sriov
 	scripts/wait-resourcelices.sh
 
-kind-teardown: ## teardown a CI cluster
+kind-teardown: ## teardown the purpose-built test cluster
 	kind delete cluster --name ${CLUSTER_NAME}
 
 ##@ dependencies
