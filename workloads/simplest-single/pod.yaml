@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-lowlat-tiny
+spec:
+  containers:
+    - name: workload-container
+      image: "registry.k8s.io/pause:3.9"
+      resources:
+        limits:
+          cpu: "2"
+          memory: "4Gi"
+        claims:
+          - name: "lowlat-resources-tiny"
+  resourceClaims:
+    - name: "lowlat-resources-tiny"
+      resourceClaimTemplateName: "lowlat-tiny" 
+
