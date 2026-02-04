@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: reference-besteffort
+spec:
+  containers:
+    - name: reference
+      image: "registry.k8s.io/pause:3.9"
