@@ -37,11 +37,17 @@ func main() {
 	lh := stdr.New(log.New(os.Stderr, "", log.Lshortfile))
 	podNamespace, podName := os.Args[1], os.Args[2]
 
+	allNUMANodes, err := loadCPUSetFromFile(filepath.Join(nodeRoot, "online"))
+	if err != nil {
+		lh.Error(err, "getting the online NUMA nodes")
+		os.Exit(1)
+	}
 	topo, err := loadPhysicalTopology()
 	if err != nil {
 		lh.Error(err, "getting the NUMA CPU topology")
 		os.Exit(1)
 	}
+
 	config, err := clientcmd.BuildConfigFromFlags("", clientcmd.RecommendedHomeFile)
 	if err != nil {
 		lh.Error(err, "loading a kubernetes client config")
@@ -98,6 +104,9 @@ func main() {
 			lh.Error(err, "getting the container NUMA Nodes")
 			continue
 		}
+		if assignedNodes.IsEmpty() {
+			assignedNodes = allNUMANodes
+		}
 
 		fmt.Println("  + Memory:")
 		for _, nodeID := range assignedNodes.List() {
@@ -105,7 +114,7 @@ func main() {
 		}
 		fmt.Println("  + CPU:")
 		for nodeID, nodeCPUs := range topo {
-			matches := nodeCPUs.Difference(assignedCPUs)
+			matches := nodeCPUs.Intersection(assignedCPUs)
 			if !matches.IsEmpty() {
 				fmt.Printf("    + NUMA Zone %d: CPUs %v\n", nodeID, matches)
 			}
