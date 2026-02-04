@@ -1,6 +1,6 @@
 module github.com/ffromani/dra-driver-integration-env
 
-go 1.25.6
+go 1.25.3
 
 require (
 	github.com/ffromani/dra-driver-memory v0.1.5
