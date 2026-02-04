@@ -100,7 +100,7 @@ image-drivers: ## build the all-in-one container image with all the DRA drivers
 manifest-all: manifest-cluster manifest-cpu manifest-memory ## build all the manifests
 
 manifest-cluster: $(YAML_DIR) ## create the cluster setup manifests
-	@cp manifest/cluster/kind.yaml $(YAML_DIR)/cluster.yaml
+	@cp manifests/cluster/kind.yaml $(YAML_DIR)/cluster.yaml
 
 RESERVED_CPUS ?= 0
 manifest-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq ## create the CPU driver install manifests
