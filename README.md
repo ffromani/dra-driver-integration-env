@@ -121,6 +121,8 @@ make kind-teardown
 
 ## why import `main.go` of the drivers?
 
+To consume the latest and greatest code from the relevant drivers, decoupling from their release cycle, because some
+key components are still experimental/early in development.
 To efficiently preload driver images in the local kind cluster minimizing the network traffic.
 
 Pulling the driver's `main.go`, alongside their install manifests (copy/paste them), enables us to easily
