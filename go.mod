@@ -3,7 +3,7 @@ module github.com/ffromani/dra-driver-integration-env
 go 1.25.3
 
 require (
-	github.com/ffromani/dra-driver-memory v0.1.5
+	github.com/ffromani/dra-driver-memory v0.1.6
 	github.com/go-logr/stdr v1.2.2
 	github.com/k8snetworkplumbingwg/dra-driver-sriov v0.0.0-20260121133427-87c9c34d0b57
 	github.com/kubernetes-sigs/dra-driver-cpu v0.0.0-20260202071427-b0c9921e1374
