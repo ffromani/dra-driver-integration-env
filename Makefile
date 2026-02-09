@@ -211,7 +211,14 @@ kind-teardown: ## teardown the purpose-built kind cluster
 minikube-setup: minikube-create minikube-reconfigure-runtime manifest-nosetup-all manifest-install ## setup the minikube cluster from scratch
 
 minikube-create: image-all build-setup-all ## create and preload a KVM minikube cluster from scratch
-	minikube start --nodes=2 --driver=kvm2 --kvm-numa-count=2 --cpus=16 --memory=16g
+minikube-create: image-all build-setup-all ## create and preload a KVM minikube cluster from scratch
+	minikube start \
+		--feature-gates=DRAResourceClaimDeviceStatus=true,DRAConsumableCapacity=true,DRAPartitionableDevices=true \
+		--nodes=2 \
+		--driver=kvm2 \
+		--kvm-numa-count=2 \
+		--cpus=16 \
+		--memory=16g
 	kubectl label node minikube-m02 node-role.kubernetes.io/worker=''
 	kubectl taint node minikube node-role.kubernetes.io/control-plane:NoSchedule
 	minikube image load ${IMAGE}
