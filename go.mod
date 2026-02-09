@@ -6,7 +6,7 @@ require (
 	github.com/ffromani/dra-driver-memory v0.1.6
 	github.com/go-logr/stdr v1.2.2
 	github.com/k8snetworkplumbingwg/dra-driver-sriov v0.0.0-20260121133427-87c9c34d0b57
-	github.com/kubernetes-sigs/dra-driver-cpu v0.0.0-20260202071427-b0c9921e1374
+	github.com/kubernetes-sigs/dra-driver-cpu v0.0.0-20260209074522-b7479d4581b0
 	github.com/moby/moby/client v0.2.2
 	github.com/prometheus/client_golang v1.23.2
 	github.com/urfave/cli/v2 v2.27.7
