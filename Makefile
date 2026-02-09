@@ -104,13 +104,22 @@ image-drivers: ## build the all-in-one container image with all the DRA drivers
 
 manifest-all: manifest-cluster manifest-cpu manifest-memory ## build all the manifests
 
+manifest-nosetup-all: manifest-cluster manifest-nosetup-cpu manifest-nosetup-memory ## build all the manifests
+
 manifest-cluster: $(YAML_DIR) ## create the cluster setup manifests
 	@cp manifests/cluster/kind.yaml $(YAML_DIR)/cluster.yaml
+
+manifest-install: ## install the DRA drivers on the default cluster
+	kubectl create -f build/yaml/install.cpu.yaml
+	kubectl create -f build/yaml/install.memory.yaml
+	# TODO: sriov
+	scripts/wait-resourcelices.sh
 
 RESERVED_CPUS ?= 0
 manifest-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq ## create the CPU driver install manifests
 	@cd manifests/cpu && $(YQ) e -s '(.kind | downcase) + "-" + .metadata.name + ".part.yaml"' ../../manifests/cpu/install.tmpl.yaml
-	@# need to make kind load docker-image working as expected: see https://kind.sigs.k8s.io/docs/user/quick-start/#loading-an-image-into-your-cluster
+	@$(YQ) -i 'del(.spec.template.spec.tolerations)' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i 'del(.spec.template.spec.tolerations)' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.initContainers[0].name = "setup-runtime"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.initContainers[0].imagePullPolicy = "IfNotPresent"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.initContainers[0].image = "${IMAGE}"' manifests/cpu/daemonset-dracpu.part.yaml
@@ -131,7 +140,7 @@ manifest-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq ## crea
 
 manifest-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-install-yq ## create the memory driver install manifests
 	@cd manifests/memory && $(YQ) e -s '(.kind | downcase) + "-" + .metadata.name + ".part.yaml"' ../../manifests/memory/install.tmpl.yaml
-	@# need to make kind load docker-image working as expected: see https://kind.sigs.k8s.io/docs/user/quick-start/#loading-an-image-into-your-cluster
+	@$(YQ) -i 'del(.spec.template.spec.tolerations)' manifests/memory/daemonset-dramemory.part.yaml
 	@$(YQ) -i '.spec.template.spec.initContainers[0].imagePullPolicy = "IfNotPresent"' manifests/memory/daemonset-dramemory.part.yaml
 	@$(YQ) -i '.spec.template.spec.initContainers[0].image = "${IMAGE}"' manifests/memory/daemonset-dramemory.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' manifests/memory/daemonset-dramemory.part.yaml
@@ -148,9 +157,45 @@ manifest-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-install-yq #
 		> $(YAML_DIR)/install.memory.yaml
 	@rm manifests/memory/*.part.yaml
 
+manifest-nosetup-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq ## create the CPU driver install manifests
+	@cd manifests/cpu && $(YQ) e -s '(.kind | downcase) + "-" + .metadata.name + ".part.yaml"' ../../manifests/cpu/install.tmpl.yaml
+	@$(YQ) -i 'del(.spec.template.spec.tolerations)' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i 'del(.spec.template.spec.initContainers)' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].image = "${IMAGE}"' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].command = ["/bin/dracpu"]' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].args = ["-v=6", "--cpu-device-mode=grouped", "--reserved-cpus=${RESERVED_CPUS}"]' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.metadata.labels["build"] = "${GIT_VERSION}"' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) '.' \
+		manifests/cpu/clusterrole-dracpu.part.yaml \
+		manifests/cpu/serviceaccount-dracpu.part.yaml \
+		manifests/cpu/clusterrolebinding-dracpu.part.yaml \
+		manifests/cpu/daemonset-dracpu.part.yaml \
+		manifests/cpu/deviceclass-dra.cpu.part.yaml \
+		> $(YAML_DIR)/install.cpu.yaml
+	@rm manifests/cpu/*.part.yaml
+
+manifest-nosetup-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-install-yq ## create the memory driver install manifests
+	@cd manifests/memory && $(YQ) e -s '(.kind | downcase) + "-" + .metadata.name + ".part.yaml"' ../../manifests/memory/install.tmpl.yaml
+	@$(YQ) -i 'del(.spec.template.spec.tolerations)' manifests/memory/daemonset-dramemory.part.yaml
+	@$(YQ) -i 'del(.spec.template.spec.initContainers)' manifests/memory/daemonset-dramemory.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' manifests/memory/daemonset-dramemory.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].image = "${IMAGE}"' manifests/memory/daemonset-dramemory.part.yaml
+	@$(YQ) -i '.spec.template.metadata.labels["build"] = "${GIT_VERSION}"' manifests/memory/daemonset-dramemory.part.yaml
+	@$(YQ) '.' \
+		manifests/memory/clusterrole-dramemory.part.yaml \
+		manifests/memory/serviceaccount-dramemory.part.yaml \
+		manifests/memory/clusterrolebinding-dramemory.part.yaml \
+		manifests/memory/daemonset-dramemory.part.yaml \
+		manifests/memory/deviceclass-dra.memory.part.yaml \
+		manifests/memory/deviceclass-dra.hugepages-1g.part.yaml \
+		manifests/memory/deviceclass-dra.hugepages-2m.part.yaml \
+		> $(YAML_DIR)/install.memory.yaml
+	@rm manifests/memory/*.part.yaml
+
 ##@ kind management
 
-kind-setup: kind-create kind-install ## setup the test cluster from scratch
+kind-setup: kind-create manifest-all manifest-install ## setup the kind cluster from scratch
 
 kind-create: manifest-cluster image-all ## create and preload a kind cluster from scratch
 	kind create cluster --name ${CLUSTER_NAME} --config build/yaml/cluster.yaml
@@ -158,14 +203,30 @@ kind-create: manifest-cluster image-all ## create and preload a kind cluster fro
 	kind load docker-image --name ${CLUSTER_NAME} ${IMAGE}
 	scripts/wait-worker-nodes.sh
 
-kind-install: manifest-all ## install the DRA drivers on the default cluster
-	kubectl create -f build/yaml/install.cpu.yaml
-	kubectl create -f build/yaml/install.memory.yaml
-	# TODO: sriov
-	scripts/wait-resourcelices.sh
-
-kind-teardown: ## teardown the purpose-built test cluster
+kind-teardown: ## teardown the purpose-built kind cluster
 	kind delete cluster --name ${CLUSTER_NAME}
+
+##@ minikube management
+
+minikube-setup: minikube-create minikube-reconfigure-runtime manifest-nosetup-all manifest-install ## setup the minikube cluster from scratch
+
+minikube-create: image-all build-setup-all ## create and preload a KVM minikube cluster from scratch
+	minikube start --nodes=2 --driver=kvm2 --kvm-numa-count=2 --cpus=16 --memory=16g
+	kubectl label node minikube-m02 node-role.kubernetes.io/worker=''
+	kubectl taint node minikube node-role.kubernetes.io/control-plane:NoSchedule
+	minikube image load ${IMAGE}
+	scripts/wait-worker-nodes.sh
+
+minikube-teardown: ## teardown the purpose-built minikube cluster
+	minikube stop
+	minikube delete
+
+minikube-reconfigure-runtime: ## reconfigure containerd in the minikube worker nodes
+	minikube cp build/bin/setup-runtime-containerd minikube-m02:/bin/setup-runtime-containerd
+	minikube ssh -n minikube-m02 sudo /bin/chmod 0755 /bin/setup-runtime-containerd
+	minikube ssh -n minikube-m02 sudo /bin/setup-runtime-containerd /etc/containerd/config.toml
+	minikube ssh -n minikube-m02 sudo /bin/systemctl daemon-reload
+	minikube ssh -n minikube-m02 sudo /bin/systemctl restart containerd
 
 ##@ dependencies
 
