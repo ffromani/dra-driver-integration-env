@@ -5,7 +5,8 @@ metadata:
 spec:
   containers:
     - name: workload-container
-      image: "quay.io/fromani/ctrreschk:v0.0.8"
+      image: "dev.kind.local/dra/dra-core-resource-validation:dev"
+      imagePullPolicy: IfNotPresent
       resources:
         limits:
           cpu: "2"

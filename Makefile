@@ -40,15 +40,18 @@ SHELL = /usr/bin/env bash -o pipefail
 
 # get image name from directory we're building
 CLUSTER_NAME=dra-core-resource-drivers
-IMAGE_NAME=dra-core-resource-drivers
+IMAGE_DRIVERS_NAME=dra-core-resource-drivers
+IMAGE_VALIDATE_NAME=dra-core-resource-validation
 # this is an intentionally non-existent registry to be used only by local CI using the local image loading
 REGISTRY := dev.kind.local/dra
-FULL_IMAGE_NAME := ${REGISTRY}/${IMAGE_NAME}
+FULL_IMAGE_DRIVERS_NAME := ${REGISTRY}/${IMAGE_DRIVERS_NAME}
+FULL_IMAGE_VALIDATE_NAME := ${REGISTRY}/${IMAGE_VALIDATE_NAME}
 # tag based on date-sha
 GIT_VERSION := $(shell date +v%Y%m%d)-$(shell git rev-parse --short HEAD)
 TAG ?= $(GIT_VERSION)
 # the full image tag
-IMAGE := ${FULL_IMAGE_NAME}:${TAG}
+IMAGE_DRIVERS := ${FULL_IMAGE_DRIVERS_NAME}:${TAG}
+IMAGE_VALIDATE := ${FULL_IMAGE_VALIDATE_NAME}:dev
 
 # dependencies
 ## versions
@@ -86,21 +89,32 @@ build-setup-runtime: build-setup-runtime-containerd ## build the runtime setup e
 build-setup-runtime-containerd: ## build the containerd setup helper
 	go build -v -o "$(BIN_DIR)/setup-runtime-containerd" ./setup/containerd
 
-build-validate-all: build-validate-kind-all ## build all the validation tools
+build-validate-all: build-validate-generic-all build-validate-kind-all ## build all the validation tools
 
 build-validate-kind-all: build-validate-kind-alignment ## build all the kind-specific validation tools
 
 build-validate-kind-alignment: ## build kind-specific alignment validation tool
 	go build -v -o "$(BIN_DIR)/kind-validate-alignment" ./validation/kind/alignment
 
+build-validate-generic-all: build-validate-generic-alignment ## build platform-agnostic validation tools
+
+build-validate-generic-alignment: ## build container entry point validation tool
+	go build -v -o "$(BIN_DIR)/container-validate-alignment" ./validation/generic/alignment
+
 ##@ container images
 
-image-all: image-drivers ## build all the container images
+image-all: image-drivers image-validate ## build all the container images
 
 image-drivers: ## build the all-in-one container image with all the DRA drivers
 	${CONTAINER_ENGINE} build . \
 		--platform="${PLATFORMS}" \
-		--tag="${IMAGE}"
+		--tag="${IMAGE_DRIVERS}"
+
+image-validate: ## build the all-in-one validation image with all the tools included
+	${CONTAINER_ENGINE} build . \
+		-f validation/generic/alignment/Dockerfile \
+		--platform="${PLATFORMS}" \
+		--tag="${IMAGE_VALIDATE}"
 
 ##@ manifests
 
@@ -123,13 +137,13 @@ manifest-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq ## crea
 	@$(YQ) -i 'del(.spec.template.spec.tolerations)' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.initContainers[0].name = "setup-runtime"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.initContainers[0].imagePullPolicy = "IfNotPresent"' manifests/cpu/daemonset-dracpu.part.yaml
-	@$(YQ) -i '.spec.template.spec.initContainers[0].image = "${IMAGE}"' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.initContainers[0].image = "${IMAGE_DRIVERS}"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.initContainers[0].command = ["/bin/setup-runtime"]' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' manifests/cpu/daemonset-dracpu.part.yaml
-	@$(YQ) -i '.spec.template.spec.containers[0].image = "${IMAGE}"' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].image = "${IMAGE_DRIVERS}"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].command = ["/bin/dracpu"]' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].args = ["-v=6", "--cpu-device-mode=grouped", "--reserved-cpus=${RESERVED_CPUS}"]' manifests/cpu/daemonset-dracpu.part.yaml
-	@$(YQ) -i '.spec.template.metadata.labels["build"] = "${GIT_VERSION}"' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.metadata.labels["build"] = "${GIT_VERSION_DRIVERS}"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) '.' \
 		manifests/cpu/clusterrole-dracpu.part.yaml \
 		manifests/cpu/serviceaccount-dracpu.part.yaml \
@@ -143,9 +157,9 @@ manifest-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-install-yq #
 	@cd manifests/memory && $(YQ) e -s '(.kind | downcase) + "-" + .metadata.name + ".part.yaml"' ../../manifests/memory/install.tmpl.yaml
 	@$(YQ) -i 'del(.spec.template.spec.tolerations)' manifests/memory/daemonset-dramemory.part.yaml
 	@$(YQ) -i '.spec.template.spec.initContainers[0].imagePullPolicy = "IfNotPresent"' manifests/memory/daemonset-dramemory.part.yaml
-	@$(YQ) -i '.spec.template.spec.initContainers[0].image = "${IMAGE}"' manifests/memory/daemonset-dramemory.part.yaml
+	@$(YQ) -i '.spec.template.spec.initContainers[0].image = "${IMAGE_DRIVERS}"' manifests/memory/daemonset-dramemory.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' manifests/memory/daemonset-dramemory.part.yaml
-	@$(YQ) -i '.spec.template.spec.containers[0].image = "${IMAGE}"' manifests/memory/daemonset-dramemory.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].image = "${IMAGE_DRIVERS}"' manifests/memory/daemonset-dramemory.part.yaml
 	@$(YQ) -i '.spec.template.metadata.labels["build"] = "${GIT_VERSION}"' manifests/memory/daemonset-dramemory.part.yaml
 	@$(YQ) '.' \
 		manifests/memory/clusterrole-dramemory.part.yaml \
@@ -163,7 +177,7 @@ manifest-nosetup-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq
 	@$(YQ) -i 'del(.spec.template.spec.tolerations)' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i 'del(.spec.template.spec.initContainers)' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' manifests/cpu/daemonset-dracpu.part.yaml
-	@$(YQ) -i '.spec.template.spec.containers[0].image = "${IMAGE}"' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].image = "${IMAGE_DRIVERS}"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].command = ["/bin/dracpu"]' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].args = ["-v=6", "--cpu-device-mode=grouped", "--reserved-cpus=${RESERVED_CPUS}"]' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.metadata.labels["build"] = "${GIT_VERSION}"' manifests/cpu/daemonset-dracpu.part.yaml
@@ -181,7 +195,7 @@ manifest-nosetup-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-inst
 	@$(YQ) -i 'del(.spec.template.spec.tolerations)' manifests/memory/daemonset-dramemory.part.yaml
 	@$(YQ) -i 'del(.spec.template.spec.initContainers)' manifests/memory/daemonset-dramemory.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' manifests/memory/daemonset-dramemory.part.yaml
-	@$(YQ) -i '.spec.template.spec.containers[0].image = "${IMAGE}"' manifests/memory/daemonset-dramemory.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].image = "${IMAGE_DRIVERS}"' manifests/memory/daemonset-dramemory.part.yaml
 	@$(YQ) -i '.spec.template.metadata.labels["build"] = "${GIT_VERSION}"' manifests/memory/daemonset-dramemory.part.yaml
 	@$(YQ) '.' \
 		manifests/memory/clusterrole-dramemory.part.yaml \
@@ -201,7 +215,8 @@ kind-setup: kind-create manifest-all manifest-install ## setup the kind cluster 
 kind-create: manifest-cluster image-all ## create and preload a kind cluster from scratch
 	kind create cluster --name ${CLUSTER_NAME} --config build/yaml/cluster.yaml
 	kubectl label node ${CLUSTER_NAME}-worker node-role.kubernetes.io/worker=''
-	kind load docker-image --name ${CLUSTER_NAME} ${IMAGE}
+	kind load docker-image --name ${CLUSTER_NAME} ${IMAGE_DRIVERS}
+	kind load docker-image --name ${CLUSTER_NAME} ${IMAGE_VALIDATE}
 	scripts/wait-worker-nodes.sh
 
 kind-teardown: ## teardown the purpose-built kind cluster
@@ -221,7 +236,8 @@ minikube-create: image-all build-setup-all ## create and preload a KVM minikube 
 		--memory=16g
 	kubectl label node minikube-m02 node-role.kubernetes.io/worker=''
 	kubectl taint node minikube node-role.kubernetes.io/control-plane:NoSchedule
-	minikube image load ${IMAGE}
+	minikube image load ${IMAGE_DRIVERS}
+	minikube image load ${IMAGE_VALIDATE}
 	scripts/wait-worker-nodes.sh
 
 minikube-teardown: ## teardown the purpose-built minikube cluster
