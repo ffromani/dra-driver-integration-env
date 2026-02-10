@@ -224,11 +224,12 @@ kind-teardown: ## teardown the purpose-built kind cluster
 
 ##@ minikube management
 
-minikube-setup: minikube-create minikube-reconfigure-runtime minikube-reconfigure-kubelet manifest-nosetup-all manifest-install ## setup the minikube cluster from scratch
+minikube-setup: minikube-create minikube-reconfigure-runtime manifest-nosetup-all manifest-install ## setup the minikube cluster from scratch
 
 minikube-create: image-all build-setup-all ## create and preload a KVM minikube cluster from scratch
 	minikube start \
 		--feature-gates=DRAResourceClaimDeviceStatus=true,DRAConsumableCapacity=true,DRAPartitionableDevices=true \
+		--container-runtime=containerd \
 		--nodes=2 \
 		--driver=kvm2 \
 		--kvm-numa-count=2 \
@@ -250,13 +251,6 @@ minikube-reconfigure-runtime: ## reconfigure containerd in the minikube worker n
 	minikube ssh -n minikube-m02 sudo /bin/setup-runtime-containerd /etc/containerd/config.toml
 	minikube ssh -n minikube-m02 sudo /bin/systemctl daemon-reload
 	minikube ssh -n minikube-m02 sudo /bin/systemctl restart containerd
-
-minikube-reconfigure-kubelet: ## reconfigure kubelet in the minikube worker nodes
-	minikube cp scripts/reconfigure-minikube-kubelet.sh minikube-m02:/bin/setup-kubelet-containerd
-	minikube ssh -n minikube-m02 sudo /bin/chmod 0755 /bin/setup-kubelet-containerd
-	minikube ssh -n minikube-m02 sudo /bin/setup-kubelet-containerd
-	minikube ssh -n minikube-m02 sudo /bin/systemctl daemon-reload
-	minikube ssh -n minikube-m02 sudo /bin/systemctl restart kubelet
 
 ##@ dependencies
 
