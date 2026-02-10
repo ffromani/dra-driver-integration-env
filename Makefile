@@ -86,10 +86,12 @@ build-setup-runtime: build-setup-runtime-containerd ## build the runtime setup e
 build-setup-runtime-containerd: ## build the containerd setup helper
 	go build -v -o "$(BIN_DIR)/setup-runtime-containerd" ./setup/containerd
 
-build-validate-all: build-validate-alignment ## build all the validation tools
+build-validate-all: build-validate-kind-all ## build all the validation tools
 
-build-validate-alignment: ## build alignment validation tool
-	go build -v -o "$(BIN_DIR)/validate-alignment" ./validation/alignment
+build-validate-kind-all: build-validate-kind-alignment ## build all the kind-specific validation tools
+
+build-validate-kind-alignment: ## build kind-specific alignment validation tool
+	go build -v -o "$(BIN_DIR)/kind-validate-alignment" ./validation/kind/alignment
 
 ##@ container images
 

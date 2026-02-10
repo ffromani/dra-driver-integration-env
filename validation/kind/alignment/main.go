@@ -30,7 +30,7 @@ type Topology map[int]cpuset.CPUSet
 
 func main() {
 	if len(os.Args) < 3 {
-		fmt.Println("Usage: go run check-alignment.go <namespace> <pod-name>")
+		fmt.Printf("Usage: %s <namespace> <pod-name>\n", filepath.Base(os.Args[0]))
 		os.Exit(1)
 	}
 
