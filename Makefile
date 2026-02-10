@@ -121,7 +121,6 @@ RESERVED_CPUS ?= 0
 manifest-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq ## create the CPU driver install manifests
 	@cd manifests/cpu && $(YQ) e -s '(.kind | downcase) + "-" + .metadata.name + ".part.yaml"' ../../manifests/cpu/install.tmpl.yaml
 	@$(YQ) -i 'del(.spec.template.spec.tolerations)' manifests/cpu/daemonset-dracpu.part.yaml
-	@$(YQ) -i 'del(.spec.template.spec.tolerations)' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.initContainers[0].name = "setup-runtime"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.initContainers[0].imagePullPolicy = "IfNotPresent"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.initContainers[0].image = "${IMAGE}"' manifests/cpu/daemonset-dracpu.part.yaml
