@@ -213,7 +213,6 @@ kind-teardown: ## teardown the purpose-built kind cluster
 minikube-setup: minikube-create minikube-reconfigure-runtime manifest-nosetup-all manifest-install ## setup the minikube cluster from scratch
 
 minikube-create: image-all build-setup-all ## create and preload a KVM minikube cluster from scratch
-minikube-create: image-all build-setup-all ## create and preload a KVM minikube cluster from scratch
 	minikube start \
 		--feature-gates=DRAResourceClaimDeviceStatus=true,DRAConsumableCapacity=true,DRAPartitionableDevices=true \
 		--nodes=2 \
