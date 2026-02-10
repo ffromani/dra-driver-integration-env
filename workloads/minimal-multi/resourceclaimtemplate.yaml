@@ -18,5 +18,5 @@ spec:
           capacity:
             requests:
               dra.cpu/cpu: "1"
-    constraints:
-      - matchAttributes: "dra.cpu/numaNodeID"
+      constraints:
+      - matchAttribute: "dra.cpu/numaNodeID"
