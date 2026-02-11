@@ -10,8 +10,11 @@ which exercise DRA-backed CPU, Memory and SRIOV network device allocation.
 * golang >= 1.25
 * kubectl (or equivalent) to interact with the kubernetes cluster
 * [kind](https://kind.sigs.k8s.io/) >= 0.31
+* [minikube](https://minikube.sigs.k8s.io/docs/) >= 1.38
 
 # Quickstart
+
+## kind-based environments
 
 First, you can use `make help` to get a list of the supported targets.
 A fair amount of targets is used internally, the following quickstart
@@ -22,7 +25,7 @@ Set up the kind cluster:
 make kind-setup
 ```
 
-Once the step completes succesfully, the kind cluster would look like this
+Once the step completes successfully, the kind cluster would look like this
 ```bash
 $ kubectl get pods -A
 NAMESPACE            NAME                                                              READY   STATUS    RESTARTS   AGE
@@ -85,37 +88,56 @@ The lab provides basic validation tooling. We can build them with
 make build-validate-all
 ```
 
-Now we can run the validation tool. We can start checking the alignment of
-one of the pods which require resource alignment (random pick)
-```bash
-$ ./build/bin/validate-alignment default pod-lowlat-minimal-tclh5
-Pod: default/pod-lowlat-minimal-tclh5 QoS=Guaranteed running on node: dra-core-resource-drivers-worker (Docker ID: dda57c9c32aa)
-================================================================================================================================
-+ Container: workload-container
-  + Memory:
-    + NUMA Zone 0
-  + CPU:
-    + NUMA Zone 0: CPUs 1
-
-```
-
-and compare with the reference pod which does not allocate resources
-```bash
-$ ./build/bin/validate-alignment default reference-burstable
-Pod: default/reference-burstable QoS=Burstable running on node: dra-core-resource-drivers-worker (Docker ID: dda57c9c32aa)
-==========================================================================================================================
-+ Container: reference
-  + Memory:
-    + NUMA Zone 0
-  + CPU:
-    + NUMA Zone 0: CPUs 3-15,18-31
-
-```
+TODO: document validation
 
 To remove the kind cluster:
 ```bash
 make kind-teardown
 ```
+
+## minikube-based environments
+
+you can run test environment backed by minikube, in turn using the kvm2 driver and VM for kubernetes nodes.
+The user experience largely overlaps. You just need to use targets starting with `minikube-` rather than starting
+with `kind-`. Example
+
+Set up the minikube cluster:
+```bash
+make minikube-setup
+```
+
+Remove the minikube cluster:
+```bash
+make minikube-teardown
+```
+
+### SRIOV emulation
+
+Being VM based enable the minikube-based environment to support device emulation.
+We provide the tools to augment the minikube VMs so the nodes have a `igb` device which enables SRIOV emulation.
+This is helpful to integrate the [DRA SRIOV driver](https://github.com/k8snetworkplumbingwg/dra-driver-sriov/).
+
+To enable this functionality, you need to follow these steps **before** to create any minikube-based environments
+
+1. copy `scripts/libvirt-qemu-hook/dramachine.py` in a system path of your choice. Example:
+```bash
+sudo install scripts/libvirt-qemu-hook/dramachine.py /usr/local/bin
+```
+2. set up the wrapper entry point in `/etc/libvirt/hooks/qemu`. If you already have hooks, use your hook manager to
+add the `dramachine.py` hook. Otherwise you can use a sample wrapper like
+```bash
+#!/bin/bash
+# update according to where you copied the dramachine.py in your system
+/usr/local/bin/dramachine.py "$@" <&0
+```
+3. reload and restart libvirt
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart libvirtd
+```
+
+Please refer to the hook [README](scripts/libvirt-qemu-hook/README.md) for the more implementation details and notes
+
 
 # Implementation design and notes
 
