@@ -68,6 +68,11 @@ help: ## Display this help.
 
 ##@ binaries
 
+# Optional: set LIBVIRT_PROXY_SOCK to a Unix socket path to route minikube's
+# libvirt connections through the XML-injection proxy. When unset, minikube
+# connects to libvirtd directly (default behavior).
+LIBVIRT_PROXY_SOCK ?=
+
 build-all: build-driver-all build-setup-all build-validate-all ## build all the binaries
 
 build-driver-all: build-driver-cpu build-driver-memory build-driver-sriov ## build all the drivers
@@ -100,6 +105,9 @@ build-validate-generic-all: build-validate-generic-alignment ## build platform-a
 
 build-validate-generic-alignment: ## build container entry point validation tool
 	go build -v -o "$(BIN_DIR)/container-validate-alignment" ./validation/generic/alignment
+
+build-virtinjectd: $(OUT_DIR) ## build the libvirt XML-injection proxy
+	cd ./virtinjectd && go build -v -o "$(BIN_DIR)/virtinjectd" .
 
 ##@ container images
 
@@ -232,6 +240,7 @@ minikube-create: image-all build-setup-all ## create and preload a KVM minikube 
 		--container-runtime=containerd \
 		--nodes=2 \
 		--driver=kvm2 \
+		$(if $(LIBVIRT_PROXY_SOCK),--kvm-qemu-uri='qemu+unix:///system?socket=$(LIBVIRT_PROXY_SOCK)',) \
 		--kvm-numa-count=2 \
 		--cpus=16 \
 		--memory=16g
