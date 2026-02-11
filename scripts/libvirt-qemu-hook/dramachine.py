@@ -128,10 +128,11 @@ def process_xml_stream(input_stream: BinaryIO, output_stream: BinaryIO) -> int:
 
         root = ET.fromstring(xml_data)
 
-        # 1. Check Domain Name
+        # 1. Check Domain Name - the control plane is usually just named
+        # `minikube`, then the worker nodes come.
         name_elem = root.find("name")
-        if name_elem is not None and name_elem.text and name_elem.text.startswith("minikube"):
-            
+        if name_elem is not None and name_elem.text and name_elem.text.startswith("minikube-m"):
+
             changes_made = False
 
             # Apply all mutations
