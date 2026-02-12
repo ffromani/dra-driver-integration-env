@@ -117,27 +117,18 @@ Being VM based enable the minikube-based environment to support device emulation
 We provide the tools to augment the minikube VMs so the nodes have a `igb` device which enables SRIOV emulation.
 This is helpful to integrate the [DRA SRIOV driver](https://github.com/k8snetworkplumbingwg/dra-driver-sriov/).
 
-To enable this functionality, you need to follow these steps **before** to create any minikube-based environments
+WIP TBD
 
-1. copy `scripts/libvirt-qemu-hook/dramachine.py` in a system path of your choice. Example:
-```bash
-sudo install scripts/libvirt-qemu-hook/dramachine.py /usr/local/bin
-```
-2. set up the wrapper entry point in `/etc/libvirt/hooks/qemu`. If you already have hooks, use your hook manager to
-add the `dramachine.py` hook. Otherwise you can use a sample wrapper like
-```bash
-#!/bin/bash
-# update according to where you copied the dramachine.py in your system
-/usr/local/bin/dramachine.py "$@" <&0
-```
-3. reload and restart libvirt
-```bash
-sudo systemctl daemon-reload
-sudo systemctl restart libvirtd
-```
+To enable SRIOV emulation, we need changes in the ISO image minikube uses to run the nodes.
+A summary of changes, and pre-built ISO images, are available in the [support repo](https://github.com/ffromani/dra-driver-integration-env-data/blob/main/minikube-sriov/README.md).
 
-Please refer to the hook [README](scripts/libvirt-qemu-hook/README.md) for the more implementation details and notes
-
+You can download the pre-built ISO images with the SRIOV changes, or rebuild your own using
+the patches and the instructions provided in the support repo.
+Once you have your custom image, consume it using
+```bash
+$ export MINIKUBE_ISO=/path/to/minikube-sriov-amd64.iso # the naming is not relevant
+$ make minikube-setup
+```
 
 # Implementation design and notes
 

@@ -73,6 +73,10 @@ help: ## Display this help.
 # connects to libvirtd directly (default behavior).
 LIBVIRT_PROXY_SOCK ?=
 
+# Optional: set the minikube custom iso. You can enable SRIOV support using
+# a custom ISO image: https://github.com/ffromani/dra-driver-integration-env-data/blob/main/minikube-sriov/README.md
+MINIKUBE_ISO ?=
+
 build-all: build-driver-all build-setup-all build-validate-all ## build all the binaries
 
 build-driver-all: build-driver-cpu build-driver-memory build-driver-sriov ## build all the drivers
@@ -249,6 +253,7 @@ minikube-setup: \
 minikube-create: image-all ## create and preload a KVM minikube cluster from scratch
 	minikube start \
 		--feature-gates=DRAResourceClaimDeviceStatus=true,DRAConsumableCapacity=true,DRAPartitionableDevices=true \
+		$(if $(MINIKUBE_ISO),--iso-url='file://$(MINIKUBE_ISO)',) \
 		--container-runtime=containerd \
 		--nodes=2 \
 		--driver=kvm2 \
@@ -276,7 +281,7 @@ minikube-reconfigure-runtime: ## reconfigure containerd in the minikube worker n
 minikube-configure-sriov: ## configure SRIOV VFs if present
 	minikube cp build/bin/setup-sriovvf minikube-m02:/bin/setup-sriovvf
 	minikube ssh -n minikube-m02 sudo /bin/chmod 0755 /bin/setup-sriovvf
-	minikube ssh -n minikube-m02 sudo "/bin/setup-sriovvf -try -verbosity=debug"
+	minikube ssh -n minikube-m02 sudo "/bin/setup-sriovvf -try -num-vfs=6 -verbosity=debug"
 
 ##@ dependencies
 
