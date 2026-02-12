@@ -86,13 +86,19 @@ build-driver-memory: ## build the dramemory driver
 build-driver-sriov: ## build the sriov driver
 	go build -v -o "$(BIN_DIR)/drasriov" ./driver/sriov
 
-build-setup-all: build-setup-runtime build-setup-runtime-containerd ## build all the setup helpers
+build-setup-all: \
+	build-setup-runtime \
+	build-setup-runtime-containerd \
+	build-setup-sriov ## build all the setup helpers
 
 build-setup-runtime: build-setup-runtime-containerd ## build the runtime setup entry point
 	$(BIN_DIR)/setup-runtime-containerd -script > "$(BIN_DIR)/setup-runtime" && chmod 0755 "$(BIN_DIR)/setup-runtime"
 
 build-setup-runtime-containerd: ## build the containerd setup helper
 	go build -v -o "$(BIN_DIR)/setup-runtime-containerd" ./setup/containerd
+
+build-setup-sriov: ## build the SRIOV VFs setup helper
+	go build -v -o "$(BIN_DIR)/setup-sriovvf" ./setup/sriovvf
 
 build-validate-all: build-validate-generic-all build-validate-kind-all ## build all the validation tools
 
@@ -232,9 +238,15 @@ kind-teardown: ## teardown the purpose-built kind cluster
 
 ##@ minikube management
 
-minikube-setup: minikube-create minikube-reconfigure-runtime manifest-nosetup-all manifest-install ## setup the minikube cluster from scratch
+minikube-setup: \
+	build-setup-all \
+	minikube-create \
+	minikube-configure-sriov \
+	minikube-reconfigure-runtime \
+	manifest-nosetup-all \
+	manifest-install ## setup the minikube cluster from scratch
 
-minikube-create: image-all build-setup-all ## create and preload a KVM minikube cluster from scratch
+minikube-create: image-all ## create and preload a KVM minikube cluster from scratch
 	minikube start \
 		--feature-gates=DRAResourceClaimDeviceStatus=true,DRAConsumableCapacity=true,DRAPartitionableDevices=true \
 		--container-runtime=containerd \
@@ -260,6 +272,11 @@ minikube-reconfigure-runtime: ## reconfigure containerd in the minikube worker n
 	minikube ssh -n minikube-m02 sudo /bin/setup-runtime-containerd /etc/containerd/config.toml
 	minikube ssh -n minikube-m02 sudo /bin/systemctl daemon-reload
 	minikube ssh -n minikube-m02 sudo /bin/systemctl restart containerd
+
+minikube-configure-sriov: ## configure SRIOV VFs if present
+	minikube cp build/bin/setup-sriovvf minikube-m02:/bin/setup-sriovvf
+	minikube ssh -n minikube-m02 sudo /bin/chmod 0755 /bin/setup-sriovvf
+	minikube ssh -n minikube-m02 sudo "/bin/setup-sriovvf -try -verbosity=debug"
 
 ##@ dependencies
 
