@@ -136,9 +136,9 @@ image-validate: ## build the all-in-one validation image with all the tools incl
 
 ##@ manifests
 
-manifest-all: manifest-cluster manifest-cpu manifest-memory ## build all the manifests
+manifest-all: manifest-cluster manifest-cpu manifest-memory manifest-sriov ## build all the manifests
 
-manifest-nosetup-all: manifest-cluster manifest-nosetup-cpu manifest-nosetup-memory ## build all the manifests
+manifest-nosetup-all: manifest-cluster manifest-nosetup-cpu manifest-nosetup-memory manifest-nosetup-sriov ## build all the manifests without implicit setup step
 
 manifest-cluster: $(YAML_DIR) ## create the cluster setup manifests
 	@cp manifests/cluster/kind.yaml $(YAML_DIR)/cluster.yaml
@@ -146,7 +146,7 @@ manifest-cluster: $(YAML_DIR) ## create the cluster setup manifests
 manifest-install: ## install the DRA drivers on the default cluster
 	kubectl create -f build/yaml/install.cpu.yaml
 	kubectl create -f build/yaml/install.memory.yaml
-	# TODO: sriov
+	kubectl create -f build/yaml/install.sriov.yaml
 	scripts/wait-resourcelices.sh
 
 RESERVED_CPUS ?= 0
@@ -190,6 +190,21 @@ manifest-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-install-yq #
 		> $(YAML_DIR)/install.memory.yaml
 	@rm manifests/memory/*.part.yaml
 
+manifest-sriov: $(YAML_DIR) manifests/sriov/install.tmpl.yaml dep-install-yq ## create the sriov driver install manifests
+	@cd manifests/sriov && $(YQ) e -s '(.kind | downcase) + "-" + .metadata.name + ".part.yaml"' ../../manifests/sriov/install.tmpl.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' manifests/sriov/daemonset-sriov-dra-dra-driver-sriov-chart-kubeletplugin.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].image = "${IMAGE_DRIVERS}"' manifests/sriov/daemonset-sriov-dra-dra-driver-sriov-chart-kubeletplugin.part.yaml
+	@$(YQ) -i '.spec.template.metadata.labels["build"] = "${GIT_VERSION}"' manifests/sriov/daemonset-sriov-dra-dra-driver-sriov-chart-kubeletplugin.part.yaml
+	@$(YQ) '.' \
+		manifests/sriov/serviceaccount-sriov-dra-dra-driver-sriov-chart-service-account.part.yaml \
+		manifests/sriov/customresourcedefinition-sriovresourcefilters.sriovnetwork.k8snetworkplumbingwg.io.part.yaml \
+		manifests/sriov/clusterrole-sriov-dra-dra-driver-sriov-chart-role.part.yaml \
+		manifests/sriov/clusterrolebinding-sriov-dra-dra-driver-sriov-chart-role-binding.part.yaml \
+		manifests/sriov/daemonset-sriov-dra-dra-driver-sriov-chart-kubeletplugin.part.yaml \
+		manifests/sriov/deviceclass-sriovnetwork.k8snetworkplumbingwg.io.part.yaml \
+		> $(YAML_DIR)/install.sriov.yaml
+	@rm manifests/sriov/*.part.yaml
+
 manifest-nosetup-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq ## create the CPU driver install manifests
 	@cd manifests/cpu && $(YQ) e -s '(.kind | downcase) + "-" + .metadata.name + ".part.yaml"' ../../manifests/cpu/install.tmpl.yaml
 	@$(YQ) -i 'del(.spec.template.spec.tolerations)' manifests/cpu/daemonset-dracpu.part.yaml
@@ -225,6 +240,9 @@ manifest-nosetup-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-inst
 		manifests/memory/deviceclass-dra.hugepages-2m.part.yaml \
 		> $(YAML_DIR)/install.memory.yaml
 	@rm manifests/memory/*.part.yaml
+
+# intentional: no changes!
+manifest-nosetup-sriov: manifest-sriov ## create the SRIOV driver install manifests
 
 ##@ kind management
 
