@@ -160,7 +160,7 @@ manifest-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq ## crea
 	@$(YQ) -i '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].image = "${IMAGE_DRIVERS}"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].command = ["/bin/dracpu"]' manifests/cpu/daemonset-dracpu.part.yaml
-	@$(YQ) -i '.spec.template.spec.containers[0].args = ["-v=6", "--cpu-device-mode=grouped", "--reserved-cpus=${RESERVED_CPUS}"]' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].args = ["-v=6", "--bind-address=:8081", "--cpu-device-mode=grouped", "--reserved-cpus=${RESERVED_CPUS}"]' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.metadata.labels["build"] = "${GIT_VERSION_DRIVERS}"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) '.' \
 		manifests/cpu/clusterrole-dracpu.part.yaml \
@@ -192,8 +192,11 @@ manifest-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-install-yq #
 
 manifest-sriov: $(YAML_DIR) manifests/sriov/install.tmpl.yaml dep-install-yq ## create the sriov driver install manifests
 	@cd manifests/sriov && $(YQ) e -s '(.kind | downcase) + "-" + .metadata.name + ".part.yaml"' ../../manifests/sriov/install.tmpl.yaml
+	@$(YQ) -i '.metadata.name = "drasriov"' manifests/sriov/daemonset-sriov-dra-dra-driver-sriov-chart-kubeletplugin.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' manifests/sriov/daemonset-sriov-dra-dra-driver-sriov-chart-kubeletplugin.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].image = "${IMAGE_DRIVERS}"' manifests/sriov/daemonset-sriov-dra-dra-driver-sriov-chart-kubeletplugin.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].command = ["/bin/drasriov"]' manifests/sriov/daemonset-sriov-dra-dra-driver-sriov-chart-kubeletplugin.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].args = ["-v=6"]' manifests/sriov/daemonset-sriov-dra-dra-driver-sriov-chart-kubeletplugin.part.yaml
 	@$(YQ) -i '.spec.template.metadata.labels["build"] = "${GIT_VERSION}"' manifests/sriov/daemonset-sriov-dra-dra-driver-sriov-chart-kubeletplugin.part.yaml
 	@$(YQ) '.' \
 		manifests/sriov/serviceaccount-sriov-dra-dra-driver-sriov-chart-service-account.part.yaml \
@@ -205,14 +208,14 @@ manifest-sriov: $(YAML_DIR) manifests/sriov/install.tmpl.yaml dep-install-yq ## 
 		> $(YAML_DIR)/install.sriov.yaml
 	@rm manifests/sriov/*.part.yaml
 
-manifest-nosetup-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq ## create the CPU driver install manifests without implicit setup step
+manifest-nosetup-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq ## create the CPU driver install manifests
 	@cd manifests/cpu && $(YQ) e -s '(.kind | downcase) + "-" + .metadata.name + ".part.yaml"' ../../manifests/cpu/install.tmpl.yaml
 	@$(YQ) -i 'del(.spec.template.spec.tolerations)' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i 'del(.spec.template.spec.initContainers)' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].image = "${IMAGE_DRIVERS}"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.spec.containers[0].command = ["/bin/dracpu"]' manifests/cpu/daemonset-dracpu.part.yaml
-	@$(YQ) -i '.spec.template.spec.containers[0].args = ["-v=6", "--cpu-device-mode=grouped", "--reserved-cpus=${RESERVED_CPUS}"]' manifests/cpu/daemonset-dracpu.part.yaml
+	@$(YQ) -i '.spec.template.spec.containers[0].args = ["-v=6", "--bind-address=:8081", "--cpu-device-mode=grouped", "--reserved-cpus=${RESERVED_CPUS}"]' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i '.spec.template.metadata.labels["build"] = "${GIT_VERSION}"' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) '.' \
 		manifests/cpu/clusterrole-dracpu.part.yaml \
@@ -223,7 +226,7 @@ manifest-nosetup-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq
 		> $(YAML_DIR)/install.cpu.yaml
 	@rm manifests/cpu/*.part.yaml
 
-manifest-nosetup-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-install-yq ## create the memory driver install manifests without implicit setup step
+manifest-nosetup-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-install-yq ## create the memory driver install manifests
 	@cd manifests/memory && $(YQ) e -s '(.kind | downcase) + "-" + .metadata.name + ".part.yaml"' ../../manifests/memory/install.tmpl.yaml
 	@$(YQ) -i 'del(.spec.template.spec.tolerations)' manifests/memory/daemonset-dramemory.part.yaml
 	@$(YQ) -i 'del(.spec.template.spec.initContainers)' manifests/memory/daemonset-dramemory.part.yaml
@@ -241,8 +244,8 @@ manifest-nosetup-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-inst
 		> $(YAML_DIR)/install.memory.yaml
 	@rm manifests/memory/*.part.yaml
 
-# intentional: no changes, we don't have an implicit setup done in a initcontainer
-manifest-nosetup-sriov: manifest-sriov ## create the SRIOV driver install manifests without implicit setup step
+# intentional: no changes!
+manifest-nosetup-sriov: manifest-sriov ## create the SRIOV driver install manifests
 
 ##@ kind management
 

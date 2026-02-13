@@ -3,7 +3,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: sriov-dra-dra-driver-sriov-chart-service-account
-  namespace: dra-driver-sriov
+  namespace: kube-system
   labels:
     helm.sh/chart: dra-driver-sriov-chart-0.0.0-dev
     app.kubernetes.io/name: dra-driver-sriov-chart
@@ -109,7 +109,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: sriov-dra-dra-driver-sriov-chart-role
-  namespace: dra-driver-sriov
+  namespace: kube-system
 rules:
 - apiGroups: ["resource.k8s.io"]
   resources: ["resourceclaims"]
@@ -135,11 +135,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: sriov-dra-dra-driver-sriov-chart-role-binding
-  namespace: dra-driver-sriov
+  namespace: kube-system
 subjects:
 - kind: ServiceAccount
   name: sriov-dra-dra-driver-sriov-chart-service-account
-  namespace: dra-driver-sriov
+  namespace: kube-system
 roleRef:
   kind: ClusterRole
   name: sriov-dra-dra-driver-sriov-chart-role
@@ -150,7 +150,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: sriov-dra-dra-driver-sriov-chart-kubeletplugin
-  namespace: dra-driver-sriov
+  namespace: kube-system
   labels:
     helm.sh/chart: dra-driver-sriov-chart-0.0.0-dev
     app.kubernetes.io/name: dra-driver-sriov-chart

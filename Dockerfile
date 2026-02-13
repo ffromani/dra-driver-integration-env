@@ -26,7 +26,8 @@ COPY . .
 RUN make build-all
 
 # copy binary onto base image
-FROM busybox:1.36.1-glibc
+FROM alpine:3.23
+RUN apk add pciutils
 COPY --from=builder --chown=root:root /go/src/drv/build/bin/dramemory /bin/dramemory
 COPY --from=builder --chown=root:root /go/src/drv/build/bin/dracpu /bin/dracpu
 COPY --from=builder --chown=root:root /go/src/drv/build/bin/drasriov /bin/drasriov
