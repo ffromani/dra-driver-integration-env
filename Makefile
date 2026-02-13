@@ -205,7 +205,7 @@ manifest-sriov: $(YAML_DIR) manifests/sriov/install.tmpl.yaml dep-install-yq ## 
 		> $(YAML_DIR)/install.sriov.yaml
 	@rm manifests/sriov/*.part.yaml
 
-manifest-nosetup-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq ## create the CPU driver install manifests
+manifest-nosetup-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq ## create the CPU driver install manifests without implicit setup step
 	@cd manifests/cpu && $(YQ) e -s '(.kind | downcase) + "-" + .metadata.name + ".part.yaml"' ../../manifests/cpu/install.tmpl.yaml
 	@$(YQ) -i 'del(.spec.template.spec.tolerations)' manifests/cpu/daemonset-dracpu.part.yaml
 	@$(YQ) -i 'del(.spec.template.spec.initContainers)' manifests/cpu/daemonset-dracpu.part.yaml
@@ -223,7 +223,7 @@ manifest-nosetup-cpu: $(YAML_DIR) manifests/cpu/install.tmpl.yaml dep-install-yq
 		> $(YAML_DIR)/install.cpu.yaml
 	@rm manifests/cpu/*.part.yaml
 
-manifest-nosetup-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-install-yq ## create the memory driver install manifests
+manifest-nosetup-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-install-yq ## create the memory driver install manifests without implicit setup step
 	@cd manifests/memory && $(YQ) e -s '(.kind | downcase) + "-" + .metadata.name + ".part.yaml"' ../../manifests/memory/install.tmpl.yaml
 	@$(YQ) -i 'del(.spec.template.spec.tolerations)' manifests/memory/daemonset-dramemory.part.yaml
 	@$(YQ) -i 'del(.spec.template.spec.initContainers)' manifests/memory/daemonset-dramemory.part.yaml
@@ -241,8 +241,8 @@ manifest-nosetup-memory: $(YAML_DIR) manifests/memory/install.tmpl.yaml dep-inst
 		> $(YAML_DIR)/install.memory.yaml
 	@rm manifests/memory/*.part.yaml
 
-# intentional: no changes!
-manifest-nosetup-sriov: manifest-sriov ## create the SRIOV driver install manifests
+# intentional: no changes, we don't have an implicit setup done in a initcontainer
+manifest-nosetup-sriov: manifest-sriov ## create the SRIOV driver install manifests without implicit setup step
 
 ##@ kind management
 
