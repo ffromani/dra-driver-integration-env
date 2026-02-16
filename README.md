@@ -151,7 +151,7 @@ Download the SRIOV-enabled custom ISO images from the [support repo](https://git
 
 In a separate terminal, run the virtinjectd proxy
 ```bash
-$ ./build/bin/virtinjectd -hook scripts/libvirt-qemu-hook/dramachine.py -v=0
+$ ./build/bin/virtinjectd -hook scripts/libvirt-qemu-hook/dramachine.py -v=1
 ```
 The proxy connects to libvirt, minikube must connect to the proxy. **Keep the proxy running while the minikube cluster is running**.
 

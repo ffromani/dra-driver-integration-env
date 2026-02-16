@@ -77,7 +77,7 @@ The single hook runs first, then the directory hooks in alphabetical order.
 | `--upstream` | `/var/run/libvirt/libvirt-sock` | Path to the real libvirtd socket |
 | `--hook` | (none) | Path to a single hook script |
 | `--hook-dir` | (none) | Path to a directory of hook scripts |
-| `-v` | `0` | Logging verbosity (0=info, 1=debug, 2=trace, 3=trace+XML) |
+| `-v` | `0` | Logging verbosity (0=silent, 1=info, 2=debug, 3=trace, 4=trace+XML) |
 
 At least one of `--hook` or `--hook-dir` must be specified.
 

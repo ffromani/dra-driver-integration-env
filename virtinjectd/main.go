@@ -35,6 +35,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"os"
@@ -43,12 +44,13 @@ import (
 )
 
 // Custom slog levels for fine-grained verbosity, extending the standard
-// Debug level downward. This preserves the original V(0)..V(3) semantics:
+// Debug level downward. Verbosity mapping:
 //
-//	V(0) = Info   → slog.LevelInfo  (0)
-//	V(1) = Debug  → slog.LevelDebug (-4)
-//	V(2) = Trace  → LevelTrace      (-8)
-//	V(3) = Trace+XML → LevelTraceXML (-12)
+//	V(0) = Silent (discard all log messages)
+//	V(1) = Info      → slog.LevelInfo  (0)
+//	V(2) = Debug     → slog.LevelDebug (-4)
+//	V(3) = Trace     → LevelTrace      (-8)
+//	V(4) = Trace+XML → LevelTraceXML   (-12)
 const (
 	LevelTrace    = slog.Level(-8)
 	LevelTraceXML = slog.Level(-12)
@@ -80,13 +82,20 @@ func main() {
 			"extract it from the XML on stdin.")
 
 	verbosity := flag.Int("v", 0,
-		"Logging verbosity level. 0=info, 1=debug, 2=trace, 3=trace with XML.")
+		"Logging verbosity level. 0=silent, 1=info, 2=debug, 3=trace, 4=trace with XML.")
 
 	flag.Parse()
 
-	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+	logOutput := io.Writer(os.Stderr)
+	logLevel := slog.Level(-4 * (*verbosity - 1))
+	if *verbosity <= 0 {
+		logOutput = io.Discard
+		logLevel = slog.LevelInfo
+	}
+
+	logger := slog.New(slog.NewTextHandler(logOutput, &slog.HandlerOptions{
 		AddSource: true,
-		Level:     slog.Level(-4 * *verbosity),
+		Level:     logLevel,
 	}))
 	logger = logger.With("component", "virtinjectd")
 
