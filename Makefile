@@ -263,13 +263,13 @@ kind-teardown: ## teardown the purpose-built kind cluster
 
 ##@ minikube management
 
-minikube-setup: \
+minikube-setup: \ ## setup the minikube cluster from scratch
 	build-setup-all \
 	minikube-create \
 	minikube-configure-sriov \
 	minikube-reconfigure-runtime \
 	manifest-nosetup-all \
-	manifest-install ## setup the minikube cluster from scratch
+	manifest-install
 
 minikube-create: image-all ## create and preload a KVM minikube cluster from scratch
 	minikube start \

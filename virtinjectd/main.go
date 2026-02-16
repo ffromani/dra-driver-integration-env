@@ -120,6 +120,7 @@ func main() {
 	}
 
 	logger.Info("listening for connections", "listen", *listenPath, "upstream", *upstreamPath)
+	fmt.Printf("run \"export LIBVIRT_PROXY_SOCK=%s\"", *listenPath)
 
 	defer func() {
 		listener.Close()
