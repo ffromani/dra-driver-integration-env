@@ -263,13 +263,7 @@ kind-teardown: ## teardown the purpose-built kind cluster
 
 ##@ minikube management
 
-minikube-setup: \ ## setup the minikube cluster from scratch
-	build-setup-all \
-	minikube-create \
-	minikube-configure-sriov \
-	minikube-reconfigure-runtime \
-	manifest-nosetup-all \
-	manifest-install
+minikube-setup:  build-setup-all minikube-create minikube-configure manifest-nosetup-all manifest-install ## setup the minikube cluster from scratch
 
 minikube-create: image-all ## create and preload a KVM minikube cluster from scratch
 	minikube start \
@@ -303,6 +297,9 @@ minikube-configure-sriov: ## configure SRIOV VFs if present
 	minikube cp build/bin/setup-sriovvf minikube-m02:/bin/setup-sriovvf
 	minikube ssh -n minikube-m02 sudo /bin/chmod 0755 /bin/setup-sriovvf
 	minikube ssh -n minikube-m02 sudo "/bin/setup-sriovvf -try -num-vfs=6 -verbosity=debug"
+
+# internal target intentionally hidden
+minikube-configure: minikube-reconfigure-runtime minikube-configure-sriov
 
 ##@ dependencies
 
