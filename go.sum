@@ -43,8 +43,8 @@ github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/ffromani/ctrreschk v0.0.8 h1:5awfhTgDGVR1Bh7lCDnHgqxp8yU7g/7ZFXE8/0THJdM=
 github.com/ffromani/ctrreschk v0.0.8/go.mod h1:ms3NDdCcAisKyPXLyvnl+bEPr2jZ0iVAphgU5DQVBD4=
-github.com/ffromani/dra-driver-memory v0.1.6 h1:GGZPhNynRQMAt1hcFolXhF8NcFlHz7p7gpQVTDboZTc=
-github.com/ffromani/dra-driver-memory v0.1.6/go.mod h1:dvwLAJozvTlhjlZ9+AomycPjqzlyglMgfcKE3CIWXGU=
+github.com/ffromani/dra-driver-memory v0.1.8 h1:GypXh0ZiSXXzzMRZybNpdhx3R+FDyP9ROexIDEvvjAs=
+github.com/ffromani/dra-driver-memory v0.1.8/go.mod h1:dvwLAJozvTlhjlZ9+AomycPjqzlyglMgfcKE3CIWXGU=
 github.com/fsnotify/fsnotify v1.9.0 h1:2Ml+OJNzbYCTzsxtv8vKSFD9PbJjmhYF14k/jKC7S9k=
 github.com/fsnotify/fsnotify v1.9.0/go.mod h1:8jBTzvmWwFyi3Pb8djgCCO5IBqzKJ/Jwo8TRcHyHii0=
 github.com/fxamacker/cbor/v2 v2.9.0 h1:NpKPmjDBgUfBms6tr6JZkTHtfFGcMKsw3eGcmD/sapM=

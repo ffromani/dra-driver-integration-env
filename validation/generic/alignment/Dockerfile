@@ -26,6 +26,6 @@ COPY . .
 RUN make build-validate-all
 
 # copy binary onto base image
-FROM busybox:1.36.1-glibc
+FROM alpine:3.23
 COPY --from=builder --chown=root:root /go/src/drv/build/bin/container-validate-alignment /bin/validate-alignment
 ENTRYPOINT ["/bin/validate-alignment"]

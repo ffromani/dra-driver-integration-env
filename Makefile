@@ -93,7 +93,9 @@ build-driver-sriov: ## build the sriov driver
 build-setup-all: \
 	build-setup-runtime \
 	build-setup-runtime-containerd \
-	build-setup-sriov ## build all the setup helpers
+	build-setup-sriov \
+	build-setup-workernode \
+	$(NULL) ## build all the setup helpers
 
 build-setup-runtime: build-setup-runtime-containerd ## build the runtime setup entry point
 	$(BIN_DIR)/setup-runtime-containerd -script > "$(BIN_DIR)/setup-runtime" && chmod 0755 "$(BIN_DIR)/setup-runtime"
@@ -103,6 +105,9 @@ build-setup-runtime-containerd: ## build the containerd setup helper
 
 build-setup-sriov: ## build the SRIOV VFs setup helper
 	go build -v -o "$(BIN_DIR)/setup-sriovvf" ./setup/sriovvf
+
+build-setup-workernode: ## build the worker node setup helper
+	go build -v -o "$(BIN_DIR)/setup-workernode" ./setup/workernode
 
 build-validate-all: build-validate-generic-all build-validate-kind-all ## build all the validation tools
 
@@ -249,7 +254,7 @@ manifest-nosetup-sriov: manifest-sriov ## create the SRIOV driver install manife
 
 ##@ kind management
 
-kind-setup: kind-create manifest-all manifest-install ## setup the kind cluster from scratch
+kind-setup: kind-create kind-configure manifest-nosetup-all manifest-install ## setup the kind cluster from scratch
 
 kind-create: manifest-cluster image-all ## create and preload a kind cluster from scratch
 	kind create cluster --name ${CLUSTER_NAME} --config build/yaml/cluster.yaml
@@ -260,6 +265,15 @@ kind-create: manifest-cluster image-all ## create and preload a kind cluster fro
 
 kind-teardown: ## teardown the purpose-built kind cluster
 	kind delete cluster --name ${CLUSTER_NAME}
+
+# internal target intentionally hidden
+kind-configure: kind-reconfigure-runtime
+
+# internal target intentionally hidden
+kind-reconfigure-runtime: build-setup-workernode
+	kubectl create -f manifests/setup/rbac.yaml
+	$(BIN_DIR)/setup-workernode --kubeconfig ${HOME}/.kube/config --image ${IMAGE_DRIVERS} | kubectl create -f -
+
 
 ##@ minikube management
 
@@ -286,17 +300,18 @@ minikube-teardown: ## teardown the purpose-built minikube cluster
 	minikube stop
 	minikube delete
 
-minikube-reconfigure-runtime: ## reconfigure containerd in the minikube worker nodes
+minikube-configure-sriov: ## configure SRIOV VFs if present
+	minikube cp build/bin/setup-sriovvf minikube-m02:/bin/setup-sriovvf
+	minikube ssh -n minikube-m02 sudo /bin/chmod 0755 /bin/setup-sriovvf
+	minikube ssh -n minikube-m02 sudo "/bin/setup-sriovvf -try -num-vfs=6 -verbosity=debug"
+
+# internal target intentionally hidden
+minikube-reconfigure-runtime:
 	minikube cp build/bin/setup-runtime-containerd minikube-m02:/bin/setup-runtime-containerd
 	minikube ssh -n minikube-m02 sudo /bin/chmod 0755 /bin/setup-runtime-containerd
 	minikube ssh -n minikube-m02 sudo /bin/setup-runtime-containerd /etc/containerd/config.toml
 	minikube ssh -n minikube-m02 sudo /bin/systemctl daemon-reload
 	minikube ssh -n minikube-m02 sudo /bin/systemctl restart containerd
-
-minikube-configure-sriov: ## configure SRIOV VFs if present
-	minikube cp build/bin/setup-sriovvf minikube-m02:/bin/setup-sriovvf
-	minikube ssh -n minikube-m02 sudo /bin/chmod 0755 /bin/setup-sriovvf
-	minikube ssh -n minikube-m02 sudo "/bin/setup-sriovvf -try -num-vfs=6 -verbosity=debug"
 
 # internal target intentionally hidden
 minikube-configure: minikube-reconfigure-runtime minikube-configure-sriov
