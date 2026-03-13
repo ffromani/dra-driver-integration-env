@@ -309,8 +309,7 @@ minikube-configure-hugepages:
 	minikube cp build/bin/setup-hugepages minikube-m02:/bin/setup-hugepages
 	minikube ssh -n minikube-m02 sudo /bin/chmod 0755 /bin/setup-hugepages
 	minikube ssh -n minikube-m02 sudo /bin/mkdir /etc/hugepages
-	minikube cp manifets/hugepages/hugepages-1G.yaml minikube-m02:/etc/hugepages/hugepages-1G.yaml
-	minikube cp manifets/hugepages/hugepages-2M.yaml minikube-m02:/etc/hugepages/hugepages-2M.yaml
+	minikube cp manifests/hugepages/hugepages-2M.yaml minikube-m02:/etc/hugepages/hugepages-2M.yaml
 	minikube ssh -n minikube-m02 sudo "/bin/setup-hugepages /etc/hugepages/*.yaml"
 
 # internal target intentionally hidden
