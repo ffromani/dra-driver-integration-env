@@ -305,6 +305,15 @@ minikube-teardown: ## teardown the purpose-built minikube cluster
 	minikube delete
 
 # internal target intentionally hidden
+minikube-configure-hugepages:
+	minikube cp build/bin/setup-hugepages minikube-m02:/bin/setup-hugepages
+	minikube ssh -n minikube-m02 sudo /bin/chmod 0755 /bin/setup-hugepages
+	minikube ssh -n minikube-m02 sudo /bin/mkdir /etc/hugepages
+	minikube cp manifets/hugepages/hugepages-1G.yaml minikube-m02:/etc/hugepages/hugepages-1G.yaml
+	minikube cp manifets/hugepages/hugepages-2M.yaml minikube-m02:/etc/hugepages/hugepages-2M.yaml
+	minikube ssh -n minikube-m02 sudo "/bin/setup-hugepages /etc/hugepages/*.yaml"
+
+# internal target intentionally hidden
 minikube-configure-sriov:
 	minikube cp build/bin/setup-sriovvf minikube-m02:/bin/setup-sriovvf
 	minikube ssh -n minikube-m02 sudo /bin/chmod 0755 /bin/setup-sriovvf
@@ -319,7 +328,7 @@ minikube-reconfigure-runtime:
 	minikube ssh -n minikube-m02 sudo /bin/systemctl restart containerd
 
 # internal target intentionally hidden
-minikube-configure: minikube-reconfigure-runtime minikube-configure-sriov
+minikube-configure: minikube-reconfigure-runtime minikube-configure-hugepages minikube-configure-sriov
 
 ##@ dependencies
 
