@@ -300,7 +300,8 @@ minikube-teardown: ## teardown the purpose-built minikube cluster
 	minikube stop
 	minikube delete
 
-minikube-configure-sriov: ## configure SRIOV VFs if present
+# internal target intentionally hidden
+minikube-configure-sriov:
 	minikube cp build/bin/setup-sriovvf minikube-m02:/bin/setup-sriovvf
 	minikube ssh -n minikube-m02 sudo /bin/chmod 0755 /bin/setup-sriovvf
 	minikube ssh -n minikube-m02 sudo "/bin/setup-sriovvf -try -num-vfs=6 -verbosity=debug"
