@@ -5,11 +5,15 @@ go 1.25.3
 require (
 	github.com/ffromani/ctrreschk v0.0.8
 	github.com/ffromani/dra-driver-memory v0.1.8
+	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/stdr v1.2.2
+	github.com/jaypipes/ghw v0.21.2
 	github.com/k8snetworkplumbingwg/dra-driver-sriov v0.0.0-20260121133427-87c9c34d0b57
 	github.com/kubernetes-sigs/dra-driver-cpu v0.0.0-20260209074522-b7479d4581b0
 	github.com/moby/moby/client v0.2.2
+	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/prometheus/client_golang v1.23.2
+	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v2 v2.27.7
 	golang.org/x/sys v0.39.0
 	k8s.io/api v0.35.0
@@ -44,7 +48,6 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
-	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-openapi/jsonpointer v0.22.4 // indirect
@@ -67,7 +70,6 @@ require (
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/jaypipes/ghw v0.21.2 // indirect
 	github.com/jaypipes/pcidb v1.1.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/k8snetworkplumbingwg/network-attachment-definition-client v1.7.7 // indirect
@@ -83,7 +85,6 @@ require (
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/opencontainers/runtime-spec v1.3.0 // indirect
 	github.com/opencontainers/runtime-tools v0.9.1-0.20251114084447-edf4cb3d2116 // indirect
-	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect

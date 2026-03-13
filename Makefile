@@ -91,11 +91,15 @@ build-driver-sriov: ## build the sriov driver
 	go build -v -o "$(BIN_DIR)/drasriov" ./driver/sriov
 
 build-setup-all: \
+	build-setup-hugepages \
 	build-setup-runtime \
 	build-setup-runtime-containerd \
 	build-setup-sriov \
 	build-setup-workernode \
 	$(NULL) ## build all the setup helpers
+
+build-setup-hugepages: ## build the hugepages setup helper
+	go build -v -o "$(BIN_DIR)/setup-hugepages" ./setup/hugepages
 
 build-setup-runtime: build-setup-runtime-containerd ## build the runtime setup entry point
 	$(BIN_DIR)/setup-runtime-containerd -script > "$(BIN_DIR)/setup-runtime" && chmod 0755 "$(BIN_DIR)/setup-runtime"

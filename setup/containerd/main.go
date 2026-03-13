@@ -24,7 +24,7 @@ import (
 
 	"github.com/go-logr/stdr"
 
-	"github.com/ffromani/dra-driver-memory/pkg/setup/containerd"
+	"github.com/ffromani/dra-driver-integration-env/setup/pkg/containerd"
 )
 
 func main() {
