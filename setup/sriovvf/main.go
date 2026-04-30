@@ -22,11 +22,12 @@ const (
 )
 
 type config struct {
-	sysfsRoot string
-	numVFs    int
-	verbosity string
-	pciAddr   string
-	tryMode   bool
+	sysfsRoot  string
+	numVFs     int
+	pfNUMANode int
+	verbosity  string
+	pciAddr    string
+	tryMode    bool
 }
 
 type pfDevice struct {
@@ -59,6 +60,7 @@ func parseFlags() config {
 	}
 	flag.StringVar(&cfg.sysfsRoot, "sysfs", defaultSysfsRoot, "sysfs mount point to use")
 	flag.IntVar(&cfg.numVFs, "num-vfs", defaultNumVFs, "number of virtual functions to create")
+	flag.IntVar(&cfg.pfNUMANode, "pf-numa-node", -1, "NUMA node to assign to the PF and all its VFs (omit to round-robin balance VFs across nodes)")
 	flag.StringVar(&cfg.verbosity, "verbosity", "info", "log verbosity: quiet|info|debug")
 	flag.BoolVar(&cfg.tryMode, "try", false, "attempt operations and always exit successfully even on failures")
 	flag.Parse()
@@ -140,6 +142,14 @@ func run(cfg config, logger *slog.Logger) error {
 		}
 	}
 
+	if cfg.pfNUMANode >= 0 {
+		if err := setPFNUMANode(pf, cfg.pfNUMANode, logger); err != nil {
+			if err := handleFailure("set PF NUMA node", err); err != nil {
+				return err
+			}
+		}
+	}
+
 	vfPaths, err := listVFPaths(pf.path)
 	if err != nil {
 		if err := handleFailure("discover VF devices", fmt.Errorf("failed to discover VFs under %s: %w", pf.path, err)); err != nil {
@@ -148,26 +158,35 @@ func run(cfg config, logger *slog.Logger) error {
 		return finishTryMode(cfg.tryMode, hadFailures, logger)
 	}
 	if len(vfPaths) == 0 || cfg.numVFs == 0 {
-		logger.Info("no VF NUMA balancing needed", "created_vfs", len(vfPaths), "requested_vfs", cfg.numVFs)
+		logger.Info("no VF NUMA assignment needed", "created_vfs", len(vfPaths), "requested_vfs", cfg.numVFs)
 		return finishTryMode(cfg.tryMode, hadFailures, logger)
 	}
 
-	nodes, err := listNUMANodes(cfg.sysfsRoot)
-	if err != nil {
-		if err := handleFailure("discover NUMA nodes", fmt.Errorf("failed to list NUMA nodes: %w", err)); err != nil {
-			return err
+	if cfg.pfNUMANode >= 0 {
+		logger.Info("pinning all VFs to PF NUMA node", "vf_count", len(vfPaths), "numa_node", cfg.pfNUMANode)
+		if err := pinVFNUMA(vfPaths, cfg.pfNUMANode, logger); err != nil {
+			if err := handleFailure("set VF NUMA affinity", err); err != nil {
+				return err
+			}
 		}
-		return finishTryMode(cfg.tryMode, hadFailures, logger)
-	}
-	if len(nodes) == 0 {
-		logger.Info("no online NUMA nodes found in sysfs, skipping VF NUMA balancing")
-		return finishTryMode(cfg.tryMode, hadFailures, logger)
-	}
+	} else {
+		nodes, err := listNUMANodes(cfg.sysfsRoot)
+		if err != nil {
+			if err := handleFailure("discover NUMA nodes", fmt.Errorf("failed to list NUMA nodes: %w", err)); err != nil {
+				return err
+			}
+			return finishTryMode(cfg.tryMode, hadFailures, logger)
+		}
+		if len(nodes) == 0 {
+			logger.Info("no online NUMA nodes found in sysfs, skipping VF NUMA balancing")
+			return finishTryMode(cfg.tryMode, hadFailures, logger)
+		}
 
-	logger.Info("applying VF NUMA balancing", "vf_count", len(vfPaths), "numa_nodes", nodes)
-	if err := balanceVFNUMA(vfPaths, nodes, logger); err != nil {
-		if err := handleFailure("set VF NUMA affinity", err); err != nil {
-			return err
+		logger.Info("applying VF NUMA balancing", "vf_count", len(vfPaths), "numa_nodes", nodes)
+		if err := balanceVFNUMA(vfPaths, nodes, logger); err != nil {
+			if err := handleFailure("set VF NUMA affinity", err); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -321,6 +340,27 @@ func listNUMANodes(sysfsRoot string) ([]int, error) {
 	}
 	sort.Ints(nodes)
 	return nodes, nil
+}
+
+func setPFNUMANode(pf pfDevice, node int, logger *slog.Logger) error {
+	numaPath := filepath.Join(pf.path, "numa_node")
+	logger.Info("setting PF NUMA node", "pci", pf.pciAddr, "node", node)
+	if err := writeIntToFile(numaPath, node); err != nil {
+		return fmt.Errorf("failed to set PF %s numa_node=%d: %w", pf.pciAddr, node, err)
+	}
+	return nil
+}
+
+func pinVFNUMA(vfPaths []string, node int, logger *slog.Logger) error {
+	for _, vfPath := range vfPaths {
+		numaPath := filepath.Join(vfPath, "numa_node")
+		logger.Debug("setting VF NUMA node", "vf_path", vfPath, "node", node)
+		if err := writeIntToFile(numaPath, node); err != nil {
+			return fmt.Errorf("failed to set VF %s numa_node=%d: %w", vfPath, node, err)
+		}
+		logger.Info("set VF NUMA node", "vf_path", vfPath, "node", node)
+	}
+	return nil
 }
 
 func balanceVFNUMA(vfPaths []string, nodes []int, logger *slog.Logger) error {

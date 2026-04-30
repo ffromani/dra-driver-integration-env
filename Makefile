@@ -316,7 +316,7 @@ minikube-configure-hugepages:
 minikube-configure-sriov:
 	minikube cp build/bin/setup-sriovvf minikube-m02:/bin/setup-sriovvf
 	minikube ssh -n minikube-m02 sudo /bin/chmod 0755 /bin/setup-sriovvf
-	minikube ssh -n minikube-m02 sudo "/bin/setup-sriovvf -try -num-vfs=6 -verbosity=debug"
+	minikube ssh -n minikube-m02 sudo "/bin/setup-sriovvf -try -pf-numa-node=1 -num-vfs=4 -verbosity=debug"
 
 # internal target intentionally hidden
 minikube-reconfigure-runtime:
