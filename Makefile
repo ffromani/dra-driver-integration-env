@@ -152,6 +152,9 @@ manifest-nosetup-all: manifest-cluster manifest-nosetup-cpu manifest-nosetup-mem
 manifest-cluster: $(YAML_DIR) ## create the cluster setup manifests
 	@cp manifests/cluster/kind.yaml $(YAML_DIR)/cluster.yaml
 
+crd-install: ## install the CRDs needed by DRA drivers (SRIOV so far)
+	kubecel create -f manifests/crd/k8s.cni.cncf.io_networkattachmentdefinitions_crd.yaml 
+
 manifest-install: ## install the DRA drivers on the default cluster
 	kubectl create -f build/yaml/install.cpu.yaml
 	kubectl create -f build/yaml/install.memory.yaml
@@ -281,7 +284,7 @@ kind-reconfigure-runtime: build-setup-workernode
 
 ##@ minikube management
 
-minikube-setup:  build-setup-all minikube-create minikube-configure manifest-nosetup-all manifest-install ## setup the minikube cluster from scratch
+minikube-setup:  build-setup-all minikube-create minikube-configure manifest-nosetup-all crd-install manifest-install ## setup the minikube cluster from scratch
 
 minikube-create: image-all ## create and preload a KVM minikube cluster from scratch
 	minikube start \
