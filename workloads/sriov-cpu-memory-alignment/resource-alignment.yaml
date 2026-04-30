@@ -1,0 +1,105 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: scm-align
+---
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: scm-test
+  namespace: scm-align
+spec:
+  config: |-
+    {
+        "cniVersion": "1.0.0",
+        "name": "scm-test",
+        "type": "sriov",
+        "vlan": 0,
+        "spoofchk": "on",
+        "trust": "on",
+        "vlanQoS": 0,
+        "logLevel": "info",
+        "ipam": {
+            "type": "host-local",
+            "ranges": [
+                [
+                    {
+                        "subnet": "10.0.1.0/24"
+                    }
+                ]
+            ]
+        }
+    }
+---
+apiVersion: resource.k8s.io/v1
+kind: ResourceClaimTemplate
+metadata:
+  namespace: scm-align
+  name: resource-alignment
+spec:
+  spec:
+    devices:
+      requests:
+      - name: vf
+        exactly:
+          deviceClassName: sriovnetwork.k8snetworkplumbingwg.io
+      - name: cpu
+        exactly:
+          deviceClassName: dra.cpu
+          capacity:
+            requests:
+              dra.cpu/cpu: 4
+      - name: mem
+        exactly:
+          deviceClassName: dra.memory
+          capacity:
+            requests:
+              size: 8Gi
+      - name: hp2m
+        exactly:
+          deviceClassName: dra.hugepages-2m
+          capacity:
+            requests:
+              size: 256Mi
+      constraints:
+        - matchAttribute: "dra.net/numaNode"
+      config:
+      - requests: ["vf"]
+        opaque:
+          driver: sriovnetwork.k8snetworkplumbingwg.io
+          parameters:
+            apiVersion: sriovnetwork.k8snetworkplumbingwg.io/v1alpha1
+            kind: VfConfig
+            ifName: net1
+            netAttachDefName: scm-test
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: scm-align
+  name: pod0
+  labels:
+    app: pod
+spec:
+  terminationGracePeriodSeconds: 2
+  containers:
+  - name: ctr0
+    image: quay.io/schseba/toolbox:latest
+    command:
+      - /bin/bash
+      - -c
+      - sleep INF
+    securityContext:
+      runAsUser: 0
+      allowPrivilegeEscalation: true
+      capabilities:
+        add:
+          - NET_ADMIN
+          - NET_RAW
+    resources:
+      claims:
+      - name: vf
+  resourceClaims:
+  - name: vf
+    resourceClaimTemplateName: resource-alignment
